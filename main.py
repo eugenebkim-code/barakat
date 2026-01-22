@@ -298,26 +298,27 @@ def save_order_to_sheets(
     created_at = datetime.utcnow().isoformat()
 
     row = [[
-        order_id,             # A order_id
-        created_at,           # B created_at
-        str(user.id),         # C user_id
-        user.username or "",  # D username
-        "; ".join(items),     # E items
-        total,                # F total_price
-        kind,                 # G type
-        comment or "",        # H comment
-        "",                   # I payment_proof (позже)
+        order_id,             # A
+        created_at,           # B
+        str(user.id),         # C
+        user.username or "",  # D
+        "; ".join(items),     # E
+        total,                # F
+        kind,                 # G
+        comment or "",        # H
+        "",                   # I payment_proof
         "waiting_payment",    # J status
         "",                   # K handled_at
         "",                   # L handled_by
         "",                   # M reaction_seconds
-        address or "",        # N address (NEW)
+        address or "",        # N address
+        delivery_fee,         # O delivery_fee ✅
     ]]
 
     try:
         resp = sheet.values().append(
             spreadsheetId=SPREADSHEET_ID,
-            range="orders!A:N",
+            range="orders!A:O",
             valueInputOption="RAW",
             insertDataOption="INSERT_ROWS",
             body={"values": row},
@@ -770,7 +771,7 @@ async def dash_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     result = sheet.values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="orders!A:N",
+        range="orders!A:O",
     ).execute()
 
     rows = result.get("values", [])
@@ -1100,7 +1101,7 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         result = sheet.values().get(
             spreadsheetId=SPREADSHEET_ID,
-            range="orders!A:J",
+            range="orders!A:O",
         ).execute()
         rows = result.get("values", [])
 
@@ -1320,7 +1321,7 @@ async def on_staff_decision(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # --- читаем заказы ---
     result = sheet.values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="orders!A:N",  # ⬅️ до reaction_seconds
+        range="orders!A:O",  # ⬅️ до reaction_seconds
     ).execute()
 
     rows = result.get("values", [])
@@ -2028,7 +2029,7 @@ async def notify_staff(context: ContextTypes.DEFAULT_TYPE, order_id: str):
     # --- читаем заказы ---
     result = sheet.values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="orders!A:N",
+        range="orders!A:O",
     ).execute()
 
     rows = result.get("values", [])
@@ -2045,18 +2046,20 @@ async def notify_staff(context: ContextTypes.DEFAULT_TYPE, order_id: str):
         return
 
     (
-        _order_id,        # A
-        created_at,       # B
-        buyer_chat_id,    # C
-        buyer_username,   # D
-        items,            # E
-        total,            # F
-        kind,             # G
-        comment,          # H
-        payment_file_id,  # I
-        status,           # J
+        _order_id,
+        created_at,
+        buyer_chat_id,
+        buyer_username,
+        items,
+        total,
+        kind,
+        comment,
+        payment_file_id,
+        status,
         *_rest,
     ) = target + [""] * 10
+
+    delivery_fee = int(target[14]) if len(target) > 14 and target[14] else 0
 
     # колонка N (address)
     address = target[13] if len(target) > 13 else ""
@@ -2084,6 +2087,14 @@ async def notify_staff(context: ContextTypes.DEFAULT_TYPE, order_id: str):
         if address else ""
     )
 
+    if kind == "Доставка":
+        if delivery_fee == 0:
+            delivery_line = "🚚 <b>Доставка:</b> бесплатно\n"
+        else:
+            delivery_line = f"🚚 <b>Доставка:</b> {_fmt_money(delivery_fee)}\n"
+    else:
+        delivery_line = ""
+
     caption = (
         "🛎 <b>Новый заказ</b>\n\n"
         f"🧾 ID: <code>{order_id}</code>\n\n"
@@ -2091,6 +2102,7 @@ async def notify_staff(context: ContextTypes.DEFAULT_TYPE, order_id: str):
         f"📞 <b>Телефон:</b> <code>{buyer_phone or '—'}</code>\n"
         f"{address_block}\n"
         f"{items}\n\n"
+        f"{delivery_line}"
         f"💰 Итого: <b>{_fmt_money(int(total))}</b>\n"
         f"🚚 Способ: <b>{kind}</b>\n"
         f"💬 Комментарий: <b>{comment or '—'}</b>"
