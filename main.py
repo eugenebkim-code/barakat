@@ -1473,6 +1473,7 @@ async def on_catalog_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="➕ Добавление товара\n\nВведите название товара:",
             reply_markup=ForceReply(selective=True),
         )
+        return 
 
     if action == "desc":
         context.user_data["waiting_desc_for"] = product_id
