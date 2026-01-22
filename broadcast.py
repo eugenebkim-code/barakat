@@ -1,4 +1,5 @@
 # broadcast.py
+print("### BROADCAST FILE:", __file__)
 import asyncio
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -15,8 +16,8 @@ log = logging.getLogger("Broadcast")
 
 # ===== helpers =====
 
-def is_admin(chat_id: int, owner_id: int, staff_ids: set[int], admin_id: int) -> bool:
-    return chat_id in (owner_id, admin_id) or chat_id in staff_ids
+def is_admin(chat_id: int, owner_id: int, staff_ids: set[int]) -> bool:
+    return chat_id == owner_id or chat_id in staff_ids
 
 
 def get_all_user_ids(sheet_service, spreadsheet_id: str) -> list[int]:
