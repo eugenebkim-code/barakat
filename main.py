@@ -277,14 +277,22 @@ def save_order_to_sheets(
     sheet = service.spreadsheets()
 
     items = []
-    total = 0
+    subtotal = 0
 
     for pid, qty in cart.items():
         p = get_product_by_id(pid)
         if not p:
             continue
         items.append(f"{p['name']} x{qty}")
-        total += p["price"] * qty
+        subtotal += p["price"] * qty
+
+    # доставка
+    delivery_fee = 0
+    if kind == "Доставка":
+        if subtotal < FREE_DELIVERY_FROM:
+            delivery_fee = DELIVERY_FEE
+
+    total = subtotal + delivery_fee
 
     order_id = str(uuid.uuid4())
     created_at = datetime.utcnow().isoformat()
@@ -350,6 +358,16 @@ def cart_total(cart: Dict[str, int]) -> int:
         if p:
             total += p["price"] * qty
     return total
+
+def calc_delivery_fee(cart: dict, kind: str) -> int:
+    if kind != "delivery":
+        return 0
+
+    subtotal = cart_total(cart)
+    if subtotal >= FREE_DELIVERY_FROM:
+        return 0
+
+    return DELIVERY_FEE
 
 def cart_text(cart: Dict[str, int]) -> str:
     if not cart:
@@ -1508,7 +1526,8 @@ async def on_catalog_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 SHOP_NAME = "БАРАКАТ"
 SHOP_PHONE = "010-8207-4445"
 SHOP_NOTE = "Традиционная узбекская кухня. ХАЛАЛ"
-
+FREE_DELIVERY_FROM = 30000
+DELIVERY_FEE = 4000
 
 # -------------------------
 # checkout conversation
@@ -2108,14 +2127,29 @@ def build_checkout_preview(
     comment: str,
     address: str | None = None,
 ) -> str:
+    kind = "delivery" if kind_label == "Доставка" else "pickup"
+
+    subtotal = cart_total(cart)
+    delivery_fee = calc_delivery_fee(cart, kind)
+    total = subtotal + delivery_fee
+
     address_block = (
         f"Адрес: <b>{address}</b>\n"
         if address else ""
     )
 
+    delivery_block = ""
+    if kind == "delivery":
+        if delivery_fee == 0:
+            delivery_block = "🚚 Доставка: <b>бесплатно</b>\n"
+        else:
+            delivery_block = f"🚚 Доставка: <b>{_fmt_money(delivery_fee)}</b>\n"
+
     return (
         "🧾 <b>Проверьте заказ</b>\n\n"
         f"{cart_text(cart)}\n\n"
+        f"{delivery_block}"
+        f"💰 <b>Итого к оплате: {_fmt_money(total)}</b>\n\n"
         f"Способ: <b>{kind_label}</b>\n"
         f"{address_block}"
         f"Комментарий: <b>{comment or '—'}</b>\n\n"
