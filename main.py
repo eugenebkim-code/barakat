@@ -492,7 +492,7 @@ def kb_checkout_pickup_delivery() -> InlineKeyboardMarkup:
 
 def kb_checkout_preview():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📎 Прикрепить фото оплаты", callback_data="checkout:attach")],
+        [InlineKeyboardButton("📎 Прикрепить скриншот", callback_data="checkout:attach")],
         [InlineKeyboardButton("❌ Отмена", callback_data="checkout:cancel")],
     ])
 # -------------------------
@@ -2164,7 +2164,7 @@ def build_checkout_preview(
         f"Способ: <b>{kind_label}</b>\n"
         f"{address_block}"
         f"Комментарий: <b>{comment or '—'}</b>\n\n"
-        "Чтобы отправить заказ, прикрепите фото оплаты ⬇️"
+        "На этом этапе необходимо произвести оплату на наш тонжан и прикрепить скриншот ⬇️"
     )
 
 def main():
