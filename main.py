@@ -2211,13 +2211,15 @@ def main():
         log.info("🟥 DEBUG: PHOTO UPDATE ARRIVED")
 
     
-    MessageHandler(
-        filters.TEXT
-        & filters.REPLY
-        & ~filters.Chat(STAFF_CHAT_IDS)
-        & ~filters.PHOTO
-        & ~filters.Document.ALL,
-        on_checkout_reply
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT
+            & filters.REPLY
+            & ~filters.Chat(STAFF_CHAT_IDS)
+            & ~filters.PHOTO
+            & ~filters.Document.ALL,
+            on_checkout_reply
+        )
     )
 
     # -------- STAFF --------
