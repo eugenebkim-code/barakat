@@ -2169,79 +2169,79 @@ def build_checkout_preview(
     )
 
 def main():
+    
+    
     app = Application.builder().token(BOT_TOKEN).build()
-
     # -------- COMMANDS --------
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("restart", restart_cmd))
     app.add_handler(CommandHandler("clear", clear_cmd))
-    app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("help", help_cmd))  # ← ВОТ ЭТОГО НЕ ХВАТАЛО
     app.add_handler(CommandHandler("catalog", catalog_cmd))
     app.add_handler(CommandHandler("dash", dash_cmd))
 
-    # -------- BUYER PAYMENT PHOTO --------
+    # -------- CALLBACKS (ВСЕ КНОПКИ) --------
+    
     app.add_handler(
         MessageHandler(
             (filters.PHOTO | filters.Document.IMAGE)
             & ~filters.Chat(STAFF_CHAT_IDS),
             on_buyer_payment_photo
-        ),
-        group=0
+        )
     )
 
-    # -------- CALLBACKS --------
     app.add_handler(
         CallbackQueryHandler(
             on_button,
             pattern=r"^(home:|nav:|cat:|prod:|cart:|checkout:)"
-        ),
-        group=0
+        )
     )
 
     app.add_handler(
         CallbackQueryHandler(
             on_catalog_toggle,
             pattern=r"^catalog:"
-        ),
-        group=0
+        )
     )
 
     app.add_handler(
         CallbackQueryHandler(
             on_staff_decision,
             pattern=r"^staff:(approve|reject):"
-        ),
-        group=0
+        )
     )
 
-    # -------- BROADCAST --------
+    async def debug_any_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        log.info("🟥 DEBUG: PHOTO UPDATE ARRIVED")
+
+    
+    # -------- BUYER PHOTO (payment proof) --------
+    
     register_broadcast_handlers(
         app,
         owner_chat_id=OWNER_CHAT_ID_INT,
         staff_chat_ids=STAFF_CHAT_IDS,
-        STAFF_CHAT_IDS = list(STAFF_CHAT_IDS)
         sheets_service=get_sheets_service(),
         spreadsheet_id=SPREADSHEET_ID,
     )
 
-    # -------- STAFF (ВЫШЕ ВСЕГО ТЕКСТА) --------
+
+
+    # -------- STAFF --------
     app.add_handler(
         MessageHandler(
             filters.TEXT & filters.Chat(STAFF_CHAT_IDS),
             on_staff_text
-        ),
-        group=1
+        )
     )
-
+    
     app.add_handler(
         MessageHandler(
             filters.PHOTO & filters.Chat(STAFF_CHAT_IDS),
             on_staff_photo
-        ),
-        group=1
+        )
     )
-
-    # -------- BUYER CHECKOUT REPLY --------
+    # -------- STAFF TEXT (ОБЯЗАТЕЛЬНО) --------
     app.add_handler(
         MessageHandler(
             filters.TEXT
@@ -2250,8 +2250,7 @@ def main():
             & ~filters.PHOTO
             & ~filters.Document.ALL,
             on_checkout_reply
-        ),
-        group=2
+        )
     )
 
     log.info("Bot started")
@@ -2262,3 +2261,22 @@ def main():
         ],
         drop_pending_updates=True,
     )
+
+
+def get_product_by_id(pid: str) -> dict | None:
+    for p in read_products_from_sheets():
+        if p["product_id"] == pid and p["available"]:
+            return p
+    return None
+
+def get_categories_from_products(products: list[dict]) -> list[str]:
+    return sorted({
+        p["category"]
+        for p in products
+        if p["available"] and p.get("category")
+    })
+
+
+
+if __name__ == "__main__":
+    main()
