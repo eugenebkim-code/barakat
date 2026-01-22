@@ -2232,15 +2232,6 @@ def main():
         spreadsheet_id=SPREADSHEET_ID,
     )
 
-    log.info("Bot started")
-    app.run_polling(
-        allowed_updates=[
-            "message",
-            "callback_query",
-        ],
-        drop_pending_updates=True,
-    )
-
     # -------- STAFF --------
     app.add_handler(
         MessageHandler(
@@ -2254,6 +2245,15 @@ def main():
             filters.TEXT & ~filters.COMMAND & filters.Chat(STAFF_CHAT_IDS),
             on_staff_text
         )
+    )
+
+    og.info("Bot started")
+    app.run_polling(
+        allowed_updates=[
+            "message",
+            "callback_query",
+        ],
+        drop_pending_updates=True,
     )
 
 
