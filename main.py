@@ -2183,7 +2183,13 @@ def main():
             on_staff_photo
         )
     )
-    
+    # -------- STAFF TEXT (ОБЯЗАТЕЛЬНО) --------
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND & filters.Chat(STAFF_CHAT_IDS),
+            on_staff_text
+        )
+    )
 # -------- BUYER PHOTO (payment proof) --------
     
     log.info("Bot started")
