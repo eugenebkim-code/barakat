@@ -50,6 +50,7 @@ from telegram.ext import (
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from broadcast import register_broadcast_handlers
 
 GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
@@ -2238,6 +2239,14 @@ def main():
     )
 # -------- BUYER PHOTO (payment proof) --------
     
+    register_broadcast_handlers(
+        app,
+        owner_chat_id=OWNER_CHAT_ID_INT,
+        staff_chat_ids=STAFF_CHAT_IDS,
+        sheets_service=get_sheets_service(),
+        spreadsheet_id=SPREADSHEET_ID,
+    )
+
     log.info("Bot started")
     app.run_polling(
         allowed_updates=[
