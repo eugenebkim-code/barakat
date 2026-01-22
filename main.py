@@ -2226,6 +2226,14 @@ def main():
         )
     )
     
+    # -------- STAFF TEXT --------
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.Chat(STAFF_CHAT_IDS),
+            on_staff_text
+        )
+    )
+
     # ✅ ВОТ СЮДА
     register_broadcast_handlers(
         app,
