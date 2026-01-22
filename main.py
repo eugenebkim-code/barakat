@@ -1465,8 +1465,8 @@ async def on_catalog_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text="➕ Добавление товара\n\nВведите название товара:",
+            reply_markup=ForceReply(selective=True),
         )
-        return
 
     if action == "desc":
         context.user_data["waiting_desc_for"] = product_id
@@ -2122,17 +2122,6 @@ async def notify_staff(context: ContextTypes.DEFAULT_TYPE, order_id: str):
 
 
 
-async def on_text_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.user_data.get("checkout_step"):
-        return  # ❗ не мешаем checkout FSM
-
-    if not update.message:
-        return
-
-    chat_id = update.effective_chat.id
-    if chat_id in STAFF_CHAT_IDS:
-        await on_staff_text(update, context)
-
 def build_checkout_preview(
     cart: dict,
     kind_label: str,
@@ -2224,8 +2213,6 @@ def main():
         sheets_service=get_sheets_service(),
         spreadsheet_id=SPREADSHEET_ID,
     )
-
-
 
     # -------- STAFF --------
     app.add_handler(
