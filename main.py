@@ -2219,6 +2219,7 @@ def main():
         app,
         owner_chat_id=OWNER_CHAT_ID_INT,
         staff_chat_ids=STAFF_CHAT_IDS,
+        STAFF_CHAT_IDS = list(STAFF_CHAT_IDS)
         sheets_service=get_sheets_service(),
         spreadsheet_id=SPREADSHEET_ID,
     )
