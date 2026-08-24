@@ -32,6 +32,8 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     InputMediaPhoto,
+    WebAppInfo,
+    MenuButtonWebApp,
 )
 
 from telegram import ForceReply
@@ -75,6 +77,7 @@ log = logging.getLogger("FlowerShopKR")
 # -------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+MINIAPP_URL = os.getenv("MINIAPP_URL", "").strip()
 
 OWNER_CHAT_ID = os.getenv("OWNER_CHAT_ID")
 if not OWNER_CHAT_ID:
@@ -421,11 +424,19 @@ def track_msg(context: ContextTypes.DEFAULT_TYPE, message_id: int):
 # keyboards
 # -------------------------
 def kb_home() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
+    rows = [
         [InlineKeyboardButton("🥘 Каталог", callback_data="home:catalog")],
         [InlineKeyboardButton("🧺 Корзина", callback_data="home:cart")],
         [InlineKeyboardButton("ℹ️ Как заказать", callback_data="home:help")],
-    ])
+    ]
+
+    if MINIAPP_URL:
+        rows.insert(
+            1,
+            [InlineKeyboardButton("🧩 Mini App", web_app=WebAppInfo(url=MINIAPP_URL))],
+        )
+
+    return InlineKeyboardMarkup(rows)
 
 def kb_checkout_send() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
@@ -764,6 +775,19 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     register_user_if_new(user)
 
     chat_id = update.effective_chat.id
+
+    if MINIAPP_URL:
+        try:
+            await context.bot.set_chat_menu_button(
+                chat_id=chat_id,
+                menu_button=MenuButtonWebApp(
+                    text="Mini App",
+                    web_app=WebAppInfo(url=MINIAPP_URL),
+                ),
+            )
+        except Exception:
+            log.warning("⚠️ Failed to set mini app menu button", exc_info=True)
+
     await render_home(context, chat_id)
 
 async def dash_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
