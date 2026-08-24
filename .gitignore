@@ -10,3 +10,8 @@ __pycache__/
 # venv
 .venv/
 venv/
+
+# frontend
+miniapp/node_modules/
+miniapp/dist/
+node_modules/
