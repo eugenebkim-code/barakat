@@ -913,16 +913,20 @@ async def on_checkout_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id in STAFF_CHAT_IDS:
         return
 
-    if not context.user_data.get("checkout_step"):
+    step = context.user_data.get("checkout_step")
+    if not step:
         return
-    
+
     msg = update.message
-    if not msg or not msg.reply_to_message:
+    if not msg or not (msg.text or msg.caption):
         return
 
     chat_id = msg.chat_id
-    text = (msg.text or "").strip()
-    step = context.user_data.get("checkout_step")
+    text = (msg.text or msg.caption or "").strip()
+    if not text:
+        return
+
+    log.info("Checkout reply received: step=%s text=%s", step, text[:80])
 
     # --- ЭТАП 1: ИМЯ ---
     if step == "ask_name":
@@ -2271,7 +2275,7 @@ def main():
     app.add_handler(
         MessageHandler(
             filters.TEXT
-            & filters.REPLY
+            & ~filters.COMMAND
             & ~filters.Chat(STAFF_CHAT_IDS)
             & ~filters.PHOTO
             & ~filters.Document.ALL,
