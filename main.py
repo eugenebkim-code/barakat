@@ -54,13 +54,37 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from broadcast import register_broadcast_handlers
 
-GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
-if not GOOGLE_CREDENTIALS_JSON or not SPREADSHEET_ID:
+def load_google_credentials():
+    raw = os.getenv("GOOGLE_CREDENTIALS_JSON", "").strip()
+    file_path = os.getenv("GOOGLE_CREDENTIALS_FILE", "").strip()
+
+    candidates = []
+    if raw:
+        candidates.append(raw)
+    if file_path:
+        candidates.append(file_path)
+
+    for candidate in candidates:
+        try:
+            if candidate.startswith("{"):
+                return json.loads(candidate)
+            if candidate and os.path.exists(candidate):
+                with open(candidate, "r", encoding="utf-8") as fh:
+                    return json.load(fh)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+
+    raise RuntimeError(
+        "Google Sheets credentials missing or invalid. Set GOOGLE_CREDENTIALS_JSON or GOOGLE_CREDENTIALS_FILE to a valid service-account JSON."
+    )
+
+
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+if not SPREADSHEET_ID:
     raise RuntimeError("Google Sheets ENV vars missing")
 
-GOOGLE_CREDS_INFO = json.loads(GOOGLE_CREDENTIALS_JSON)
+GOOGLE_CREDS_INFO = load_google_credentials()
 
 # -------------------------
 # logging
